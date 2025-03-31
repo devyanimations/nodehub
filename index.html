@@ -905,6 +905,22 @@
             </div>
         </div>
     </div>
+    
+<!-- View Note Modal -->
+<div class="modal-overlay" id="viewNoteModal">
+  <div class="modal-content" id="viewNoteContent">
+    <div class="modal-header">
+      <div class="modal-title" id="viewNoteTitle">Note Title</div>
+      <button class="close-button" id="closeViewNote">&times;</button>
+    </div>
+    <div class="help-content">
+      <p id="viewNoteDate"></p>
+      <p id="viewNoteContentBody"></p>
+      <div class="node-visual" id="viewNoteVisual"></div>
+      <div class="note-tags" id="viewNoteTags"></div>
+    </div>
+  </div>
+</div>
 
     <script>
         // Sample data
@@ -1076,15 +1092,48 @@
             downloadAnchorNode.remove();
         });
 
-        // Note card click for viewing details
-        notesContainer.addEventListener('click', (e) => {
-            const noteCard = e.target.closest('.note-card');
-            if (noteCard) {
-                const noteId = parseInt(noteCard.dataset.id);
-                const note = notes.find(n => n.id === noteId);
-                alert(`Viewing note: ${note.title}\n\n${note.content}`);
-            }
-        });
+        // View note modal behavior
+const viewNoteModal = document.getElementById('viewNoteModal');
+const closeViewNote = document.getElementById('closeViewNote');
+const viewNoteTitle = document.getElementById('viewNoteTitle');
+const viewNoteDate = document.getElementById('viewNoteDate');
+const viewNoteContentBody = document.getElementById('viewNoteContentBody');
+const viewNoteVisual = document.getElementById('viewNoteVisual');
+const viewNoteTags = document.getElementById('viewNoteTags');
+
+notesContainer.addEventListener('click', (e) => {
+    const noteCard = e.target.closest('.note-card');
+    if (noteCard) {
+        const noteId = parseInt(noteCard.dataset.id);
+        const note = notes.find(n => n.id === noteId);
+        if (!note) return;
+
+        // Populate modal
+        viewNoteTitle.textContent = note.title;
+        viewNoteDate.textContent = `Date: ${note.date}`;
+        viewNoteContentBody.textContent = note.content;
+        viewNoteVisual.innerHTML = note.nodeVisual ? note.nodeVisual.replace(/\n/g, '<br>') : '';
+        viewNoteTags.innerHTML = note.tags.map(tag =>
+            `<div class="tag ${tag}">${tag}</div>`
+        ).join('');
+
+        // Show modal
+        viewNoteModal.classList.add('active');
+    }
+});
+
+// Close modal via button
+closeViewNote.addEventListener('click', () => {
+    viewNoteModal.classList.remove('active');
+});
+
+// Close modal when clicking outside the content
+viewNoteModal.addEventListener('click', (e) => {
+    if (e.target === viewNoteModal) {
+        viewNoteModal.classList.remove('active');
+    }
+});
+
 
         // Functions
         function renderNotes() {
