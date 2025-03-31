@@ -969,6 +969,8 @@
         let currentCategory = 'all';
         let currentSort = 'date-desc';
         let currentTags = ['all'];
+        let isEditing = false;
+
 
         // Initialize
         renderNotes();
@@ -1053,8 +1055,10 @@
         const noteForm = document.getElementById('noteForm');
 
         addNewNote.addEventListener('click', () => {
-            noteModal.classList.add('active');
-        });
+    noteModal.classList.add('active');
+    enableTagToggle(); // this makes tags clickable when modal opens
+});
+
 
         closeModal.addEventListener('click', () => {
             noteModal.classList.remove('active');
@@ -1066,6 +1070,8 @@
 
         noteForm.addEventListener('submit', (e) => {
     e.preventDefault();
+    if (isEditing) return; // Stop if we're editing
+
 
     const title = document.getElementById('noteTitle').value.trim();
     const content = document.getElementById('noteContent').value.trim();
@@ -1306,6 +1312,7 @@ document.addEventListener('click', () => {
 // Handle "Edit Note" option
 editNoteOption.addEventListener('click', () => {
     if (!noteToEdit) return;
+    
 
     // Fill in the form with the note data
     document.getElementById('noteTitle').value = noteToEdit.title;
@@ -1326,6 +1333,8 @@ editNoteOption.addEventListener('click', () => {
 
     // Open modal
     noteModal.classList.add('active');
+    isEditing = true;
+    enableTagToggle(); // 💥 again, make sure tags are clickable
 
     // Swap submit behavior to update instead of add
     noteForm.onsubmit = function(e) {
@@ -1345,9 +1354,21 @@ editNoteOption.addEventListener('click', () => {
         renderNotes();
 
         // Reset form back to default submit
+        isEditing = false;
         noteForm.onsubmit = null;
+
     };
 });
+
+        function enableTagToggle() {
+    const modalTagOptions = document.querySelectorAll('#noteForm .tag-option');
+    modalTagOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            option.classList.toggle('selected');
+        });
+    });
+}
+enableTagToggle(); // Run once on load
 
         
     </script>
