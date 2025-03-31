@@ -1020,6 +1020,38 @@
             helpModal.classList.remove('active');
         });
 
+        // Close help modal when clicking outside the content
+helpModal.addEventListener('click', (e) => {
+    if (e.target === helpModal) {
+        helpModal.classList.remove('active');
+    }
+});
+
+        <!-- Right-click context menu -->
+<div id="noteContextMenu" class="context-menu" style="display: none; position: absolute;">
+  <div id="editNoteOption" class="context-menu-item">✏️ Edit Note</div>
+</div>
+
+<style>
+.context-menu {
+    background-color: var(--blender-panel);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 0.25rem 0;
+    z-index: 999;
+}
+.context-menu-item {
+    padding: 0.5rem 1rem;
+    color: var(--blender-text);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.2s ease;
+}
+.context-menu-item:hover {
+    background-color: rgba(255,255,255,0.05);
+}
+</style>
+
         // Modal functionality (existing)
         const addNewNote = document.getElementById('addNewNote');
         const noteModal = document.getElementById('noteModal');
@@ -1250,6 +1282,77 @@ viewNoteModal.addEventListener('click', (e) => {
                         return 0;
                 }
             });
+const contextMenu = document.getElementById('noteContextMenu');
+const editNoteOption = document.getElementById('editNoteOption');
+let noteToEdit = null;
+
+// Show context menu on right-click
+notesContainer.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const noteCard = e.target.closest('.note-card');
+    if (!noteCard) return;
+
+    const noteId = parseInt(noteCard.dataset.id);
+    noteToEdit = notes.find(n => n.id === noteId);
+    if (!noteToEdit) return;
+
+    // Show menu at cursor position
+    contextMenu.style.top = `${e.clientY}px`;
+    contextMenu.style.left = `${e.clientX}px`;
+    contextMenu.style.display = 'block';
+});
+
+// Hide context menu on click anywhere else
+document.addEventListener('click', () => {
+    contextMenu.style.display = 'none';
+});
+
+// Handle "Edit Note" option
+editNoteOption.addEventListener('click', () => {
+    if (!noteToEdit) return;
+
+    // Fill in the form with the note data
+    document.getElementById('noteTitle').value = noteToEdit.title;
+    document.getElementById('noteContent').value = noteToEdit.content;
+    document.getElementById('noteCategory').value = noteToEdit.category;
+    document.getElementById('nodeVisual').value = noteToEdit.nodeVisual || '';
+
+    // Clear existing selections
+    document.querySelectorAll('#noteForm .tag-option').forEach(tag => {
+        tag.classList.remove('selected');
+    });
+
+    // Re-select tags
+    noteToEdit.tags.forEach(tag => {
+        const tagEl = document.querySelector(`#noteForm .tag-option[data-tag="${tag}"]`);
+        if (tagEl) tagEl.classList.add('selected');
+    });
+
+    // Open modal
+    noteModal.classList.add('active');
+
+    // Update note on submit instead of adding new
+    noteForm.onsubmit = function(e) {
+        e.preventDefault();
+
+        noteToEdit.title = document.getElementById('noteTitle').value.trim();
+        noteToEdit.content = document.getElementById('noteContent').value.trim();
+        noteToEdit.category = document.getElementById('noteCategory').value;
+        noteToEdit.nodeVisual = document.getElementById('nodeVisual').value.trim();
+        noteToEdit.tags = Array.from(document.querySelectorAll('#noteForm .tag-option.selected'))
+            .map(tag => tag.dataset.tag);
+        noteToEdit.date = new Date().toISOString().split('T')[0];
+
+        localStorage.setItem('nodehub-notes', JSON.stringify(notes));
+        noteModal.classList.remove('active');
+        noteForm.reset();
+        renderNotes();
+
+        // Reset form submit back to normal after edit
+        noteForm.onsubmit = null;
+    };
+});
+            
         }
     </script>
 </body>
