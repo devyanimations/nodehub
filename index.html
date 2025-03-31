@@ -905,27 +905,83 @@
             </div>
         </div>
     </div>
-    
-<!-- View Note Modal -->
-<div class="modal-overlay" id="viewNoteModal">
-  <div class="modal-content" id="viewNoteContent">
-    <div class="modal-header">
-      <div class="modal-title" id="viewNoteTitle">Note Title</div>
-      <button class="close-button" id="closeViewNote">&times;</button>
-    </div>
-    <div class="help-content">
-      <p id="viewNoteDate"></p>
-      <p id="viewNoteContentBody"></p>
-      <div class="node-visual" id="viewNoteVisual"></div>
-      <div class="note-tags" id="viewNoteTags"></div>
-    </div>
-  </div>
-</div>
 
     <script>
         // Sample data
-        let notes = JSON.parse(localStorage.getItem('nodehub-notes')) || [];
-
+        const notes = [
+            {
+                id: 1,
+                title: "Principled BSDF Tricks",
+                content: "Using the Subsurface scattering with the Principled BSDF can create realistic skin when combined with a proper texture.",
+                nodeVisual: "Principled BSDF → Subsurface: 0.2\n→ Roughness: 0.1 → Metallic: 0",
+                category: "shader",
+                tags: ["shader", "tip"],
+                date: "2023-11-15"
+            },
+            {
+                id: 2,
+                title: "Noise Texture Patterns",
+                content: "Combine Noise and Voronoi textures with a Color Ramp to create interesting procedural patterns for surfaces.",
+                nodeVisual: "Noise Texture → Color Ramp\nVoronoi Texture → Mix → Color Ramp",
+                category: "texture",
+                tags: ["shader", "tutorial"],
+                date: "2023-11-10"
+            },
+            {
+                id: 3,
+                title: "Glass Material Caveat",
+                content: "Glass materials with full transparency (Alpha = 1) can sometimes cause rendering artifacts. Keep at 0.99 for best results.",
+                nodeVisual: "Glass BSDF → Mix Shader (Alpha: 0.99)\n→ Transparent BSDF",
+                category: "shader",
+                tags: ["shader", "warning"],
+                date: "2023-11-05"
+            },
+            {
+                id: 4,
+                title: "Displacement Workflow",
+                content: "For fine displacement, use true displacement with adaptive subdivision rather than bump mapping for highest detail.",
+                nodeVisual: "Displacement (Bump) → True\nSubdivision Surface Modifier → Adaptive",
+                category: "workflow",
+                tags: ["shader", "workflow"],
+                date: "2023-10-28"
+            },
+            {
+                id: 5,
+                title: "Mix RGB Shortcuts",
+                content: "Hold Ctrl while dragging to quickly connect nodes. Mix nodes can be quickly added between two existing nodes with Ctrl+Shift+Click.",
+                nodeVisual: "Texture → [Ctrl+Shift+Click] → PBR",
+                category: "workflow",
+                tags: ["tip", "shortcut"],
+                date: "2023-10-20"
+            },
+            {
+                id: 6,
+                title: "Vector Displacement Basics",
+                content: "Vector displacement offers better quality than height displacement but requires more memory. Use for high-detail surfaces like faces.",
+                nodeVisual: "Vector Displacement → Displacement Socket",
+                category: "shader",
+                tags: ["shader", "tutorial"],
+                date: "2023-10-15"
+            },
+            {
+                id: 7,
+                title: "Node Group Organization",
+                content: "Select multiple nodes and press Ctrl+G to group them. Double-click to enter group. Use frame colors to visually organize complex setups.",
+                nodeVisual: "Select Nodes → Ctrl+G",
+                category: "workflow",
+                tags: ["workflow", "shortcut"],
+                date: "2023-10-10"
+            },
+            {
+                id: 8,
+                title: "Cheat Sheet: Common Nodes",
+                content: "Math Nodes: Add (A+B), Multiply (A×B), Mix (Blend A/B), Power (Aᴮ)\n\nConverter Nodes: RGB to BW (Luminance), Normal Map (Convert colors to normals)",
+                nodeVisual: "Color → Luminance → Value",
+                category: "cheatsheet",
+                tags: ["cheatsheet"],
+                date: "2023-10-05"
+            }
+        ];
 
         // DOM elements
         const notesContainer = document.getElementById('notesContainer');
@@ -1020,38 +1076,6 @@
             helpModal.classList.remove('active');
         });
 
-        // Close help modal when clicking outside the content
-helpModal.addEventListener('click', (e) => {
-    if (e.target === helpModal) {
-        helpModal.classList.remove('active');
-    }
-});
-
-        <!-- Right-click context menu -->
-<div id="noteContextMenu" class="context-menu" style="display: none; position: absolute;">
-  <div id="editNoteOption" class="context-menu-item">✏️ Edit Note</div>
-</div>
-
-<style>
-.context-menu {
-    background-color: var(--blender-panel);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 4px;
-    padding: 0.25rem 0;
-    z-index: 999;
-}
-.context-menu-item {
-    padding: 0.5rem 1rem;
-    color: var(--blender-text);
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: background 0.2s ease;
-}
-.context-menu-item:hover {
-    background-color: rgba(255,255,255,0.05);
-}
-</style>
-
         // Modal functionality (existing)
         const addNewNote = document.getElementById('addNewNote');
         const noteModal = document.getElementById('noteModal');
@@ -1072,38 +1096,10 @@ helpModal.addEventListener('click', (e) => {
         });
 
         noteForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const title = document.getElementById('noteTitle').value.trim();
-    const content = document.getElementById('noteContent').value.trim();
-    const category = document.getElementById('noteCategory').value;
-    const nodeVisual = document.getElementById('nodeVisual').value.trim();
-    const selectedTags = Array.from(document.querySelectorAll('#noteForm .tag-option.selected'))
-        .map(tag => tag.dataset.tag);
-
-    if (!title || !content) {
-        alert('Please fill out the title and content.');
-        return;
-    }
-
-    const newNote = {
-        id: Date.now(),
-        title,
-        content,
-        category,
-        nodeVisual,
-        tags: selectedTags,
-        date: new Date().toISOString().split('T')[0]
-    };
-
-    notes.push(newNote);
-    localStorage.setItem('nodehub-notes', JSON.stringify(notes));
-
-    noteModal.classList.remove('active');
-    noteForm.reset();
-    renderNotes();
-});
-
+            e.preventDefault();
+            alert('Note saved! (In a real app, this would save to your database)');
+            noteModal.classList.remove('active');
+        });
 
         // Tag selection in modal
         const modalTagOptions = document.querySelectorAll('#noteForm .tag-option');
@@ -1124,48 +1120,15 @@ helpModal.addEventListener('click', (e) => {
             downloadAnchorNode.remove();
         });
 
-        // View note modal behavior
-const viewNoteModal = document.getElementById('viewNoteModal');
-const closeViewNote = document.getElementById('closeViewNote');
-const viewNoteTitle = document.getElementById('viewNoteTitle');
-const viewNoteDate = document.getElementById('viewNoteDate');
-const viewNoteContentBody = document.getElementById('viewNoteContentBody');
-const viewNoteVisual = document.getElementById('viewNoteVisual');
-const viewNoteTags = document.getElementById('viewNoteTags');
-
-notesContainer.addEventListener('click', (e) => {
-    const noteCard = e.target.closest('.note-card');
-    if (noteCard) {
-        const noteId = parseInt(noteCard.dataset.id);
-        const note = notes.find(n => n.id === noteId);
-        if (!note) return;
-
-        // Populate modal
-        viewNoteTitle.textContent = note.title;
-        viewNoteDate.textContent = `Date: ${note.date}`;
-        viewNoteContentBody.textContent = note.content;
-        viewNoteVisual.innerHTML = note.nodeVisual ? note.nodeVisual.replace(/\n/g, '<br>') : '';
-        viewNoteTags.innerHTML = note.tags.map(tag =>
-            `<div class="tag ${tag}">${tag}</div>`
-        ).join('');
-
-        // Show modal
-        viewNoteModal.classList.add('active');
-    }
-});
-
-// Close modal via button
-closeViewNote.addEventListener('click', () => {
-    viewNoteModal.classList.remove('active');
-});
-
-// Close modal when clicking outside the content
-viewNoteModal.addEventListener('click', (e) => {
-    if (e.target === viewNoteModal) {
-        viewNoteModal.classList.remove('active');
-    }
-});
-
+        // Note card click for viewing details
+        notesContainer.addEventListener('click', (e) => {
+            const noteCard = e.target.closest('.note-card');
+            if (noteCard) {
+                const noteId = parseInt(noteCard.dataset.id);
+                const note = notes.find(n => n.id === noteId);
+                alert(`Viewing note: ${note.title}\n\n${note.content}`);
+            }
+        });
 
         // Functions
         function renderNotes() {
@@ -1282,11 +1245,13 @@ viewNoteModal.addEventListener('click', (e) => {
                         return 0;
                 }
             });
+        }
+    
+// Right-click context menu logic
 const contextMenu = document.getElementById('noteContextMenu');
 const editNoteOption = document.getElementById('editNoteOption');
 let noteToEdit = null;
 
-// Show context menu on right-click
 notesContainer.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     const noteCard = e.target.closest('.note-card');
@@ -1296,42 +1261,34 @@ notesContainer.addEventListener('contextmenu', (e) => {
     noteToEdit = notes.find(n => n.id === noteId);
     if (!noteToEdit) return;
 
-    // Show menu at cursor position
     contextMenu.style.top = `${e.clientY}px`;
     contextMenu.style.left = `${e.clientX}px`;
     contextMenu.style.display = 'block';
 });
 
-// Hide context menu on click anywhere else
 document.addEventListener('click', () => {
     contextMenu.style.display = 'none';
 });
 
-// Handle "Edit Note" option
 editNoteOption.addEventListener('click', () => {
     if (!noteToEdit) return;
 
-    // Fill in the form with the note data
     document.getElementById('noteTitle').value = noteToEdit.title;
     document.getElementById('noteContent').value = noteToEdit.content;
     document.getElementById('noteCategory').value = noteToEdit.category;
     document.getElementById('nodeVisual').value = noteToEdit.nodeVisual || '';
 
-    // Clear existing selections
     document.querySelectorAll('#noteForm .tag-option').forEach(tag => {
         tag.classList.remove('selected');
     });
 
-    // Re-select tags
     noteToEdit.tags.forEach(tag => {
         const tagEl = document.querySelector(`#noteForm .tag-option[data-tag="${tag}"]`);
         if (tagEl) tagEl.classList.add('selected');
     });
 
-    // Open modal
     noteModal.classList.add('active');
 
-    // Update note on submit instead of adding new
     noteForm.onsubmit = function(e) {
         e.preventDefault();
 
@@ -1347,13 +1304,36 @@ editNoteOption.addEventListener('click', () => {
         noteModal.classList.remove('active');
         noteForm.reset();
         renderNotes();
-
-        // Reset form submit back to normal after edit
         noteForm.onsubmit = null;
     };
 });
-            
-        }
-    </script>
+
+</script>
+
+<!-- Right-click context menu -->
+<div id="noteContextMenu" class="context-menu" style="display: none; position: absolute;">
+  <div id="editNoteOption" class="context-menu-item">✏️ Edit Note</div>
+</div>
+
+<style>
+.context-menu {
+    background-color: var(--blender-panel);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 0.25rem 0;
+    z-index: 999;
+}
+.context-menu-item {
+    padding: 0.5rem 1rem;
+    color: var(--blender-text);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.2s ease;
+}
+.context-menu-item:hover {
+    background-color: rgba(255,255,255,0.05);
+}
+</style>
+
 </body>
 </html>
