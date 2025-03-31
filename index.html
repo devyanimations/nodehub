@@ -908,80 +908,8 @@
 
     <script>
         // Sample data
-        const notes = [
-            {
-                id: 1,
-                title: "Principled BSDF Tricks",
-                content: "Using the Subsurface scattering with the Principled BSDF can create realistic skin when combined with a proper texture.",
-                nodeVisual: "Principled BSDF → Subsurface: 0.2\n→ Roughness: 0.1 → Metallic: 0",
-                category: "shader",
-                tags: ["shader", "tip"],
-                date: "2023-11-15"
-            },
-            {
-                id: 2,
-                title: "Noise Texture Patterns",
-                content: "Combine Noise and Voronoi textures with a Color Ramp to create interesting procedural patterns for surfaces.",
-                nodeVisual: "Noise Texture → Color Ramp\nVoronoi Texture → Mix → Color Ramp",
-                category: "texture",
-                tags: ["shader", "tutorial"],
-                date: "2023-11-10"
-            },
-            {
-                id: 3,
-                title: "Glass Material Caveat",
-                content: "Glass materials with full transparency (Alpha = 1) can sometimes cause rendering artifacts. Keep at 0.99 for best results.",
-                nodeVisual: "Glass BSDF → Mix Shader (Alpha: 0.99)\n→ Transparent BSDF",
-                category: "shader",
-                tags: ["shader", "warning"],
-                date: "2023-11-05"
-            },
-            {
-                id: 4,
-                title: "Displacement Workflow",
-                content: "For fine displacement, use true displacement with adaptive subdivision rather than bump mapping for highest detail.",
-                nodeVisual: "Displacement (Bump) → True\nSubdivision Surface Modifier → Adaptive",
-                category: "workflow",
-                tags: ["shader", "workflow"],
-                date: "2023-10-28"
-            },
-            {
-                id: 5,
-                title: "Mix RGB Shortcuts",
-                content: "Hold Ctrl while dragging to quickly connect nodes. Mix nodes can be quickly added between two existing nodes with Ctrl+Shift+Click.",
-                nodeVisual: "Texture → [Ctrl+Shift+Click] → PBR",
-                category: "workflow",
-                tags: ["tip", "shortcut"],
-                date: "2023-10-20"
-            },
-            {
-                id: 6,
-                title: "Vector Displacement Basics",
-                content: "Vector displacement offers better quality than height displacement but requires more memory. Use for high-detail surfaces like faces.",
-                nodeVisual: "Vector Displacement → Displacement Socket",
-                category: "shader",
-                tags: ["shader", "tutorial"],
-                date: "2023-10-15"
-            },
-            {
-                id: 7,
-                title: "Node Group Organization",
-                content: "Select multiple nodes and press Ctrl+G to group them. Double-click to enter group. Use frame colors to visually organize complex setups.",
-                nodeVisual: "Select Nodes → Ctrl+G",
-                category: "workflow",
-                tags: ["workflow", "shortcut"],
-                date: "2023-10-10"
-            },
-            {
-                id: 8,
-                title: "Cheat Sheet: Common Nodes",
-                content: "Math Nodes: Add (A+B), Multiply (A×B), Mix (Blend A/B), Power (Aᴮ)\n\nConverter Nodes: RGB to BW (Luminance), Normal Map (Convert colors to normals)",
-                nodeVisual: "Color → Luminance → Value",
-                category: "cheatsheet",
-                tags: ["cheatsheet"],
-                date: "2023-10-05"
-            }
-        ];
+        let notes = JSON.parse(localStorage.getItem('nodehub-notes')) || [];
+
 
         // DOM elements
         const notesContainer = document.getElementById('notesContainer');
@@ -1096,10 +1024,38 @@
         });
 
         noteForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Note saved! (In a real app, this would save to your database)');
-            noteModal.classList.remove('active');
-        });
+    e.preventDefault();
+
+    const title = document.getElementById('noteTitle').value.trim();
+    const content = document.getElementById('noteContent').value.trim();
+    const category = document.getElementById('noteCategory').value;
+    const nodeVisual = document.getElementById('nodeVisual').value.trim();
+    const selectedTags = Array.from(document.querySelectorAll('#noteForm .tag-option.selected'))
+        .map(tag => tag.dataset.tag);
+
+    if (!title || !content) {
+        alert('Please fill out the title and content.');
+        return;
+    }
+
+    const newNote = {
+        id: Date.now(),
+        title,
+        content,
+        category,
+        nodeVisual,
+        tags: selectedTags,
+        date: new Date().toISOString().split('T')[0]
+    };
+
+    notes.push(newNote);
+    localStorage.setItem('nodehub-notes', JSON.stringify(notes));
+
+    noteModal.classList.remove('active');
+    noteForm.reset();
+    renderNotes();
+});
+
 
         // Tag selection in modal
         const modalTagOptions = document.querySelectorAll('#noteForm .tag-option');
